@@ -334,6 +334,10 @@ def run(
             predictions[embedded.scorer.name] = series(ids, embedded.predict(embedded.x(ids)))
             embedded_models[key] = embedded
         zero.update(prompts_section(corpus, cache / "zeroshot" / key, key, out))
+    scores = pd.DataFrame(predictions).assign(truth=corpus.truth)
+    save(scores.rename_axis("essay_id"), out, "predictions_test", index=True)
+    if zero:
+        save(pd.DataFrame(zero).rename_axis("essay_id"), out, "zero_shot_scores", index=True)
     agreement_section(corpus, predictions, zero, out, n_boot, say)
     fairness_section(corpus, predictions, out, n_boot, say)
     dif_section(corpus, out, n_boot, say)

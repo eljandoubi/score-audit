@@ -83,6 +83,19 @@ def cmd_perturbed(args):
                 log(f"{name} {args.variant} saved")
 
 
+def cmd_study(args):
+    from scoreaudit import pipeline
+
+    models = tuple(args.models)
+    pipeline.run(ROOT, Path(args.cache), Path(args.out), models, args.n_boot, say=log)
+
+
+def cmd_report(args):
+    from scoreaudit import report
+
+    log(f"wrote {report.build(Path(args.results))}")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="scoreaudit")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -122,6 +135,17 @@ def main(argv=None):
     pert.add_argument("--no-features", action="store_true", help="skip the embeddings")
     pert.add_argument("--seed", type=int, default=0)
     pert.set_defaults(run=cmd_perturbed)
+
+    study = sub.add_parser("study", help="run the audit on the outputs left in the cache")
+    study.add_argument("--cache", default="cache")
+    study.add_argument("--out", default="results")
+    study.add_argument("--models", nargs="+", default=["qwen0.5b"])
+    study.add_argument("--n-boot", type=int, default=1000)
+    study.set_defaults(run=cmd_study)
+
+    summary = sub.add_parser("report", help="write the summary and the figures from the tables")
+    summary.add_argument("--results", default="results")
+    summary.set_defaults(run=cmd_report)
 
     args = parser.parse_args(argv)
     args.run(args)
