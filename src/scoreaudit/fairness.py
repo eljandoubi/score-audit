@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from scoreaudit.metrics import bootstrap, qwk
+from scoreaudit.metrics import LOW, STEP, bootstrap, levels, qwk
 
 MIN_N = 30
 
@@ -78,6 +78,10 @@ def bias_gap(
 def impact_ratios(frame: pd.DataFrame, by: str, cut: float, min_n: int = MIN_N) -> pd.DataFrame:
     """Share of each group scoring at least `cut`, and its ratio to the best-placed group.
 
+    The scorer's score is rounded to the half point first, as the mean of two raters is, so that the
+    two rates compare like with like: a cut on the raw score would count the essays that sit
+    exactly on the cut for the raters and only half of them for the scorer.
+
     The ratio is the one of the four-fifths rule and of New York City Local Law 144: a value below
     0.8 is read as adverse impact. It is given for the raters and for the scorer, so one can see
     whether the scorer makes a gap that the raters did not make, or only repeats it.
@@ -86,13 +90,14 @@ def impact_ratios(frame: pd.DataFrame, by: str, cut: float, min_n: int = MIN_N) 
     for group, part in frame.groupby(by):
         if len(part) < min_n:
             continue
+        on_the_scale = LOW + STEP * levels(part["pred"].clip(1, 5))
         rows.append(
             {
                 "attribute": by,
                 "group": group,
                 "n": len(part),
                 "rate_human": float((part["truth"] >= cut).mean()),
-                "rate_machine": float((part["pred"] >= cut).mean()),
+                "rate_machine": float((on_the_scale >= cut).mean()),
             }
         )
     table = pd.DataFrame(rows)

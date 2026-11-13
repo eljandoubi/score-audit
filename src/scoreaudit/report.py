@@ -58,7 +58,8 @@ NOTES = {
     ),
     "impact": (
         "Share of each group scoring at or above a cut, divided by the share of the best-placed "
-        "group. A ratio below 0.8 breaks the four-fifths rule. 'ratio raters' is the same ratio "
+        "group; the scorer's score is rounded to the half point first, as the mean of two raters "
+        "is. A ratio below 0.8 breaks the four-fifths rule. 'ratio raters' is the same ratio "
         "computed on the raters' scores, which says whether the scorer made the gap or found it."
     ),
     "error": (

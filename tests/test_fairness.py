@@ -92,6 +92,15 @@ def test_impact_ratio_compares_each_group_with_the_best_placed():
     assert table["adverse_machine"].to_dict() == {"A": False, "B": True}
 
 
+def test_impact_ratio_reads_the_scorer_on_the_half_point_scale_of_the_raters():
+    frame = pd.DataFrame(
+        {"truth": [3.5] * 10 + [3.0] * 10, "pred": [3.3] * 10 + [3.2] * 10, "group": ["A"] * 20}
+    )
+    row = impact_ratios(frame, "group", cut=3.5, min_n=5).iloc[0]
+    assert row["rate_human"] == 0.5
+    assert row["rate_machine"] == 0.5
+
+
 def test_impact_ratio_leaves_out_small_groups():
     frame = pd.concat([two_groups(), two_groups().head(3).assign(group="C")])
     assert set(impact_ratios(frame, "group", cut=3.5, min_n=5)["group"]) == {"A", "B"}
