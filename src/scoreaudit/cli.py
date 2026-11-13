@@ -71,7 +71,7 @@ def cmd_perturbed(args):
     for name in args.names:
         changed = [PERTURBATIONS[name].apply(t) for t in text]
         target = out / f"emb_{name}.npz"
-        if not target.exists():
+        if not args.no_features and not target.exists():
             feats = embed(backbone, changed, args.layers, args.max_tokens)
             np.savez(target, ids=ids, feats=feats)
             log(f"{name} features saved")
@@ -119,6 +119,7 @@ def main(argv=None):
     pert.add_argument("--n", type=int, default=300)
     pert.add_argument("--variant", choices=list(VARIANTS), help="also score with this prompt")
     pert.add_argument("--variant-names", nargs="+", default=list(PERTURBATIONS))
+    pert.add_argument("--no-features", action="store_true", help="skip the embeddings")
     pert.add_argument("--seed", type=int, default=0)
     pert.set_defaults(run=cmd_perturbed)
 
