@@ -328,21 +328,19 @@ def summary(folder: Path) -> str:
 
 def figure_agreement(folder: Path) -> None:
     table = read(folder, "agreement_test.csv")
-    humans = read(folder, "human_ceiling.csv")
     if table is None:
         return
     fig, ax = plt.subplots(figsize=(7, 0.55 * len(table) + 1.4))
     y = np.arange(len(table))[::-1]
-    est = table["qwk_mean"].to_numpy()
-    err = [est - table["qwk_mean_low"].to_numpy(), table["qwk_mean_high"].to_numpy() - est]
+    est = table["qwk_single"].to_numpy()
+    err = [est - table["qwk_single_low"].to_numpy(), table["qwk_single_high"].to_numpy() - est]
     ax.barh(y, est, xerr=err, color="#4c72b0", height=0.6, capsize=3)
     ax.set_yticks(y, table["scorer"])
-    if humans is not None:
-        pair = humans.loc[humans["score"] == "overall", "qwk"].iloc[0]
-        ax.axvline(pair, color="#c44e52", linestyle="--", label=f"two raters ({pair:.2f})")
+    pair = table["qwk_humans"].iloc[0]
+    ax.axvline(pair, color="#c44e52", linestyle="--", label=f"two raters ({pair:.2f})")
     ax.axvline(0.70, color="grey", linestyle=":", label="0.70")
-    ax.set_xlabel("quadratic weighted kappa with the mean of the two raters")
-    ax.legend(loc="lower right")
+    ax.set_xlabel("quadratic weighted kappa with one rater at a time")
+    ax.legend(loc="upper right")
     fig.tight_layout()
     fig.savefig(folder / "figures" / "agreement.png", dpi=150)
     plt.close(fig)
