@@ -129,7 +129,9 @@ uv run scoreaudit report
 `features` and `zeroshot` write what the model returned, by chunk, so a long run can be stopped
 and resumed. `study` fits the scorers that learn, reads those files and writes the tables of
 `results/`; `report` turns the tables into `results/SUMMARY.md` and the figures.
-The tests need no download: they use a tiny random model and a fake corpus.
+`models/qwen2.5-0.5b-instruct` is a local copy of Qwen/Qwen2.5-0.5B-Instruct: give the Hugging
+Face id instead to download it. The tests need no download: they use a tiny random model and a
+fake corpus.
 
 ## Layout
 
