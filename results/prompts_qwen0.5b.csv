@@ -1,0 +1,5 @@
+prompt,n,mean,sd,spearman,qwk,icc_one_run,mean_sd_within_essay
+qwen0.5b zero-shot essay_first,400,4.5908,0.4331,0.1455,0.0248,0.2749,0.6432
+qwen0.5b zero-shot letters,400,3.3187,0.2515,0.1532,0.0960,0.0394,1.2366
+qwen0.5b zero-shot rubric,400,4.8332,0.2135,0.0732,0.0029,0.2090,0.3642
+qwen0.5b zero-shot short,400,4.3725,0.4723,0.0360,0.0100,0.1908,0.9213

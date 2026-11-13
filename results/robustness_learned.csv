@@ -1,0 +1,22 @@
+change,expected,n,mean_shift,shift_low,shift_high,moved_half_point,qwk_before_after,qwk_truth_before,qwk_truth_after,as_expected,scorer
+typos_2,lower,300,-0.1003,-0.1145,-0.0860,0.0033,0.8556,0.5874,0.5740,True,surface-gbm
+typos_5,lower,300,-0.1902,-0.2099,-0.1696,0.0467,0.7642,0.5874,0.5090,True,surface-gbm
+lowercase,lower,300,-0.2856,-0.3027,-0.2691,0.0733,0.6863,0.5874,0.4382,True,surface-gbm
+shuffle,lower,300,-0.0973,-0.1139,-0.0825,0.0000,0.8558,0.5874,0.5313,False,surface-gbm
+whitespace,same,300,0.0000,0.0000,0.0000,0.0000,1.0000,0.5874,0.5874,True,surface-gbm
+injection,same,300,0.0111,-0.0010,0.0255,0.0067,0.8867,0.5874,0.5872,False,surface-gbm
+repeat,same,300,-0.4397,-0.4717,-0.4105,0.3567,0.4848,0.5874,0.3406,False,surface-gbm
+typos_2,lower,300,-0.0119,-0.0143,-0.0096,0.0000,0.9830,0.5873,0.5791,False,tfidf-ridge
+typos_5,lower,300,-0.0267,-0.0301,-0.0233,0.0000,0.9597,0.5873,0.5864,False,tfidf-ridge
+lowercase,lower,300,0.0000,0.0000,0.0000,0.0000,1.0000,0.5873,0.5873,False,tfidf-ridge
+shuffle,lower,300,0.0000,-0.0012,0.0011,0.0000,1.0000,0.5873,0.5873,False,tfidf-ridge
+whitespace,same,300,0.0000,0.0000,0.0000,0.0000,1.0000,0.5873,0.5873,True,tfidf-ridge
+injection,same,300,0.0240,0.0218,0.0264,0.0000,0.9737,0.5873,0.5697,True,tfidf-ridge
+repeat,same,300,0.0327,0.0297,0.0359,0.0000,0.9573,0.5873,0.5744,True,tfidf-ridge
+typos_2,lower,300,-0.0818,-0.0889,-0.0750,0.0000,0.8977,0.7635,0.7286,False,qwen0.5b ridge
+typos_5,lower,300,-0.1807,-0.1925,-0.1688,0.0033,0.8296,0.7635,0.6971,True,qwen0.5b ridge
+lowercase,lower,300,-0.1239,-0.1334,-0.1146,0.0000,0.8740,0.7635,0.7286,True,qwen0.5b ridge
+shuffle,lower,300,-0.1217,-0.1339,-0.1080,0.0033,0.8734,0.7635,0.7172,True,qwen0.5b ridge
+whitespace,same,300,0.0581,0.0360,0.0814,0.0100,0.8043,0.7635,0.6286,False,qwen0.5b ridge
+injection,same,300,0.0089,0.0062,0.0129,0.0000,0.9944,0.7635,0.7642,True,qwen0.5b ridge
+repeat,same,300,-0.0064,-0.0131,0.0009,0.0000,0.9519,0.7635,0.7438,True,qwen0.5b ridge

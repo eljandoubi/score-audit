@@ -1,0 +1,5 @@
+,qwen0.5b zero-shot essay_first,qwen0.5b zero-shot letters,qwen0.5b zero-shot rubric,qwen0.5b zero-shot short
+qwen0.5b zero-shot essay_first,1.0000,0.2896,0.6841,0.7083
+qwen0.5b zero-shot letters,0.2896,1.0000,0.0341,0.1531
+qwen0.5b zero-shot rubric,0.6841,0.0341,1.0000,0.7919
+qwen0.5b zero-shot short,0.7083,0.1531,0.7919,1.0000

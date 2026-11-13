@@ -1,0 +1,5 @@
+change,expected,n,mean_shift,shift_low,shift_high,moved_half_point,qwk_before_after,qwk_truth_before,qwk_truth_after,as_expected,scorer
+shuffle,lower,300,-0.0613,-0.0867,-0.0387,0.0233,0.4315,0.0715,0.0213,False,qwen0.5b zero-shot letters
+repeat,same,300,0.1378,0.1091,0.1637,0.1000,0.3572,0.0715,0.0255,False,qwen0.5b zero-shot letters
+injection,same,300,-0.2005,-0.2376,-0.1615,0.2067,0.3417,0.0715,0.2897,False,qwen0.5b zero-shot letters
+typos_5,lower,300,0.0219,0.0104,0.0339,0.0000,0.7546,0.0715,0.0602,False,qwen0.5b zero-shot letters

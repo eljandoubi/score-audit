@@ -1,0 +1,31 @@
+item,focal,reference,n_focal,n_reference,dif,dif_low,dif_high,smd,attribute
+cohesion,Female,Male,2846,3636,0.0450,0.0187,0.0651,0.0685,gender
+syntax,Female,Male,2846,3636,0.0172,-0.0042,0.0342,0.0268,gender
+vocabulary,Female,Male,2846,3636,0.0283,0.0097,0.0462,0.0489,gender
+phraseology,Female,Male,2846,3636,-0.0203,-0.0370,-0.0010,-0.0313,gender
+grammar,Female,Male,2846,3636,-0.0587,-0.0810,-0.0352,-0.0852,gender
+conventions,Female,Male,2846,3636,0.0147,-0.0046,0.0356,0.0221,gender
+cohesion,disadvantaged,not disadvantaged,4507,1974,-0.0178,-0.0419,0.0066,-0.0271,ses
+syntax,disadvantaged,not disadvantaged,4507,1974,-0.0087,-0.0282,0.0121,-0.0136,ses
+vocabulary,disadvantaged,not disadvantaged,4507,1974,-0.0254,-0.0459,-0.0041,-0.0439,ses
+phraseology,disadvantaged,not disadvantaged,4507,1974,-0.0067,-0.0310,0.0115,-0.0104,ses
+grammar,disadvantaged,not disadvantaged,4507,1974,0.0112,-0.0144,0.0330,0.0163,ses
+conventions,disadvantaged,not disadvantaged,4507,1974,-0.0124,-0.0391,0.0111,-0.0185,ses
+cohesion,Asian/PI,Hispanic,792,4635,0.0186,-0.0179,0.0464,0.0285,race
+syntax,Asian/PI,Hispanic,792,4635,0.0820,0.0521,0.1135,0.1287,race
+vocabulary,Asian/PI,Hispanic,792,4635,0.0093,-0.0148,0.0368,0.0162,race
+phraseology,Asian/PI,Hispanic,792,4635,-0.0029,-0.0332,0.0294,-0.0044,race
+grammar,Asian/PI,Hispanic,792,4635,-0.0473,-0.0816,-0.0105,-0.0689,race
+conventions,Asian/PI,Hispanic,792,4635,0.0851,0.0481,0.1208,0.1280,race
+cohesion,Black,Hispanic,515,4635,-0.0233,-0.0637,0.0177,-0.0358,race
+syntax,Black,Hispanic,515,4635,0.0078,-0.0287,0.0422,0.0122,race
+vocabulary,Black,Hispanic,515,4635,0.0636,0.0282,0.0984,0.1112,race
+phraseology,Black,Hispanic,515,4635,0.0460,0.0184,0.0811,0.0714,race
+grammar,Black,Hispanic,515,4635,0.0703,0.0301,0.1112,0.1026,race
+conventions,Black,Hispanic,515,4635,-0.0316,-0.0748,0.0073,-0.0482,race
+cohesion,White,Hispanic,471,4635,0.0146,-0.0422,0.0554,0.0223,race
+syntax,White,Hispanic,471,4635,0.0018,-0.0387,0.0411,0.0028,race
+vocabulary,White,Hispanic,471,4635,-0.0073,-0.0523,0.0285,-0.0127,race
+phraseology,White,Hispanic,471,4635,0.0241,-0.0133,0.0620,0.0372,race
+grammar,White,Hispanic,471,4635,0.0480,0.0073,0.0957,0.0697,race
+conventions,White,Hispanic,471,4635,-0.0121,-0.0529,0.0271,-0.0184,race

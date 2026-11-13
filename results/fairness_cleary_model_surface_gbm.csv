@@ -1,0 +1,9 @@
+term,coef,se,low,high,p,scorer
+intercept,3.0942,0.0153,3.0642,3.1242,0.0000,surface-gbm
+pred,0.8731,0.0228,0.8283,0.9178,0.0000,surface-gbm
+gender: Female vs Male,-0.0010,0.0200,-0.0402,0.0383,0.9614,surface-gbm
+race: Asian/PI vs Hispanic,0.0186,0.0333,-0.0466,0.0838,0.5769,surface-gbm
+race: Black vs Hispanic,0.0228,0.0382,-0.0521,0.0976,0.5513,surface-gbm
+race: Other vs Hispanic,0.0239,0.1536,-0.2772,0.3250,0.8764,surface-gbm
+race: White vs Hispanic,0.0262,0.0392,-0.0507,0.1030,0.5045,surface-gbm
+ses: not disadvantaged vs disadvantaged,0.0105,0.0216,-0.0318,0.0528,0.6259,surface-gbm

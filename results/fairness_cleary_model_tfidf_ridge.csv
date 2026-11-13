@@ -1,0 +1,9 @@
+term,coef,se,low,high,p,scorer
+intercept,3.0886,0.0145,3.0602,3.1170,0.0000,tfidf-ridge
+pred,0.9794,0.0217,0.9368,1.0219,0.0000,tfidf-ridge
+gender: Female vs Male,0.0150,0.0186,-0.0214,0.0515,0.4186,tfidf-ridge
+race: Asian/PI vs Hispanic,0.0135,0.0293,-0.0438,0.0709,0.6443,tfidf-ridge
+race: Black vs Hispanic,-0.0056,0.0366,-0.0774,0.0661,0.8774,tfidf-ridge
+race: Other vs Hispanic,0.0528,0.1605,-0.2619,0.3674,0.7425,tfidf-ridge
+race: White vs Hispanic,0.0309,0.0371,-0.0418,0.1036,0.4049,tfidf-ridge
+ses: not disadvantaged vs disadvantaged,0.0134,0.0206,-0.0269,0.0537,0.5154,tfidf-ridge

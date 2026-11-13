@@ -1,0 +1,8 @@
+fraction,n_routed,qwk_routed,qwk_random,scorer
+0.0000,0,0.6340,0.6340,qwen0.5b ridge
+0.1000,257,0.6297,0.6265,qwen0.5b ridge
+0.2000,514,0.6221,0.6210,qwen0.5b ridge
+0.3000,771,0.6158,0.6141,qwen0.5b ridge
+0.5000,1286,0.6097,0.6023,qwen0.5b ridge
+0.7500,1928,0.5980,0.5903,qwen0.5b ridge
+1.0000,2571,0.5795,0.5795,qwen0.5b ridge
