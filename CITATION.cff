@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+title: "scoreaudit: checks on automated essay scorers"
+type: software
+authors:
+  - family-names: Eljandoubi
+    given-names: AbdelKarim
+version: 0.1.0
+license: Apache-2.0
+repository-code: "https://github.com/eljandoubi/score-audit"
+abstract: >-
+  Agreement with human raters, dependence on the wording of the prompt, robustness to changes of the
+  input and bias across groups of writers, for automated essay scorers, run on the ELLIPSE corpus.
+keywords:
+  - automated essay scoring
+  - evaluation
+  - fairness
+  - psychometrics
+references:
+  - type: article
+    title: "The English Language Learner Insight, Proficiency and Skills Evaluation (ELLIPSE) Corpus"
+    authors:
+      - family-names: Crossley
+        given-names: Scott
+      - family-names: Tian
+        given-names: Yu
+      - family-names: Baffour
+        given-names: Perpetual
+      - family-names: Franklin
+        given-names: Alex
+      - family-names: Kim
+        given-names: Youngmeen
+      - family-names: Morris
+        given-names: Wesley
+      - family-names: Benner
+        given-names: Meg
+      - family-names: Picou
+        given-names: Aigner
+      - family-names: Boser
+        given-names: Ulrich
+    journal: International Journal of Learner Corpus Research
+    volume: 9
+    issue: 2
+    start: 248
+    end: 269
+    year: 2023
+    doi: 10.1075/ijlcr.22026.cro
