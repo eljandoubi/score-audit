@@ -2,13 +2,21 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from scoreaudit.data import TRAITS
 from scoreaudit.metrics import icc
 from scoreaudit.study import (
     MAX_SMD,
     agreement_table,
     bland_altman_table,
+    error_by_proficiency,
+    fairness_tables,
+    mitigation_table,
+    pool_small,
     prompt_spread,
+    psychometrics,
+    robustness_table,
     sampling_reliability,
+    scoring_frame,
 )
 
 
@@ -114,3 +122,120 @@ def test_sampling_reliability_matches_a_simulation_of_two_runs():
         [(rng.random((3000, 1)) > probs.cumsum(axis=1)).sum(axis=1) + 1 for _ in range(2)], axis=1
     )
     assert sampling_reliability(probs)["icc_one_run"] == pytest.approx(icc(draws, "1,1"), abs=0.04)
+
+
+def test_robustness_reads_the_shift_and_whether_it_is_the_one_that_was_expected():
+    _, mean, _ = rated_essays()
+    after = {"typos": mean - 0.3, "injection": mean, "greedy": mean + 0.5, "other": mean - 0.2}
+    expected = {"typos": "lower", "injection": "same", "greedy": "same"}
+    table = robustness_table(mean, after, mean, expected, n_boot=50).set_index("change")
+    assert table.loc["typos", "mean_shift"] == pytest.approx(-0.3, abs=0.02)
+    assert table.loc["typos", "as_expected"]
+    assert table.loc["injection", "as_expected"]
+    assert table.loc["injection", "moved_half_point"] == 0.0
+    assert table.loc["injection", "qwk_before_after"] == 1.0
+    assert not table.loc["greedy", "as_expected"]
+    assert table.loc["other", "as_expected"] is None
+    assert table.loc["typos", "shift_high"] < 0
+
+
+def test_a_scorer_that_does_not_go_down_when_it_should_fails_the_expectation():
+    _, mean, _ = rated_essays()
+    table = robustness_table(mean, {"shuffle": mean + 0.01}, mean, {"shuffle": "lower"}, n_boot=20)
+    assert not table.loc[0, "as_expected"]
+
+
+def test_small_groups_are_pooled():
+    groups = pd.Series(["A"] * 200 + ["B"] * 150 + ["C"] * 30 + ["D"] * 10)
+    pooled = pool_small(groups, min_n=100)
+    assert pooled.value_counts().to_dict() == {"A": 200, "B": 150, "Other": 40}
+    assert pool_small(groups, min_n=5).equals(groups)
+
+
+def test_the_scoring_frame_keeps_the_essays_that_have_everything():
+    essays = pd.DataFrame(
+        {
+            "essay_id": ["a", "b", "c", "d"],
+            "gender": ["F", "M", None, "F"],
+            "overall": [3.0, 4.0, 2.0, 5.0],
+        }
+    )
+    frame = scoring_frame(essays, pd.Series({"a": 3.5, "b": 3.0, "c": 2.0}), ["gender"])
+    assert frame.index.tolist() == ["a", "b"]
+    assert frame["truth"].tolist() == [3.0, 4.0]
+    assert frame["pred"].tolist() == [3.5, 3.0]
+
+
+def group_frame(n=900, seed=0):
+    rng = np.random.default_rng(seed)
+    group = np.where(np.arange(n) % 3 == 0, "B", "A")
+    truth = rng.choice(np.arange(2.0, 4.01, 0.5), n)
+    pred = truth + np.where(np.arange(n) % 2 == 0, 0.2, -0.2) + np.where(group == "B", 0.4, 0.0)
+    return pd.DataFrame({"truth": truth, "pred": pred, "group": group})
+
+
+def test_fairness_tables_cover_each_attribute_and_cut():
+    tables = fairness_tables(group_frame(), ["group"], cuts=(3.0, 3.5), n_boot=20)
+    assert set(tables) == {"groups", "impact", "error_model", "cleary_model"}
+    assert set(tables["groups"]["group"]) == {"A", "B"}
+    assert sorted(tables["impact"]["cut"].unique()) == [3.0, 3.5]
+    assert "group: B vs A" in set(tables["error_model"]["term"])
+
+
+def trait_scores(n=1500, seed=0):
+    rng = np.random.default_rng(seed)
+    ability = rng.normal(size=n)
+    frame = pd.DataFrame({"essay_id": [f"e{i}" for i in range(n)]})
+    for trait in TRAITS:
+        frame[trait] = np.clip(np.rint((3 + 0.7 * ability + rng.normal(0, 0.35, n)) * 2) / 2, 1, 5)
+    return frame, ability
+
+
+def test_psychometrics_gives_one_row_per_trait_and_a_proficiency_for_each_essay():
+    essays, ability = trait_scores()
+    table, summary, theta = psychometrics(essays)
+    assert table["item"].tolist() == list(TRAITS)
+    assert (table["discrimination"] > 0).all()
+    assert summary["reliability"] > 0.8
+    assert summary["alpha"] > 0.8
+    assert np.corrcoef(theta.to_numpy(), ability)[0, 1] > 0.9
+    assert theta.index.tolist() == essays["essay_id"].tolist()
+
+
+def test_a_scorer_that_pulls_toward_the_middle_is_too_generous_at_the_bottom_only():
+    rng = np.random.default_rng(1)
+    truth = rng.uniform(1, 5, 1000)
+    frame = pd.DataFrame(
+        {"truth": truth, "pred": 0.5 * truth + 1.5}, index=[f"e{i}" for i in range(1000)]
+    )
+    theta = pd.Series(truth + rng.normal(0, 0.3, 1000), index=frame.index, name="theta")
+    table = error_by_proficiency(frame, theta, bands=5, n_boot=50)
+    assert table["n"].tolist() == [200] * 5
+    assert table["bias"].iloc[0] > 0.5
+    assert table["bias"].iloc[-1] < -0.5
+    assert table["bias"].is_monotonic_decreasing
+    assert (table["bias_low"] < table["bias"]).all()
+
+
+def test_mitigation_compares_four_versions_and_the_group_line_closes_the_gap():
+    frame = group_frame()
+    calls = []
+
+    def refit(weights):
+        calls.append(len(weights))
+        return frame["pred"] - np.where(frame["group"] == "B", 0.2, 0.0)
+
+    table = mitigation_table(
+        frame, "group", frame["group"].to_numpy(), frame["truth"].to_numpy(), refit, n_boot=20
+    ).set_index("version")
+    assert calls == [len(frame)]
+    assert table.index.tolist() == [
+        "as fitted",
+        "reweighed training",
+        "common line",
+        "line for each group",
+    ]
+    assert table.loc["line for each group", "bias_gap"] < 0.1
+    assert table.loc["as fitted", "bias_gap"] > 0.35
+    assert table.loc["reweighed training", "bias_gap"] < table.loc["as fitted", "bias_gap"]
+    assert table.loc["line for each group", "qwk"] >= table.loc["as fitted", "qwk"] - 0.03
