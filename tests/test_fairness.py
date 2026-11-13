@@ -2,7 +2,16 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scoreaudit.fairness import bias_gap, group_report, smd_machine_human
+from scoreaudit.fairness import (
+    bias_gap,
+    cleary_model,
+    error_model,
+    group_regression,
+    group_report,
+    impact_ratios,
+    ols,
+    smd_machine_human,
+)
 
 
 def frame_with_bias(n=600, shift_b=0.4, seed=0):
@@ -64,3 +73,82 @@ def test_bias_gap_interval_covers_zero_when_the_groups_are_treated_alike():
     gap, low, high = bias_gap(frame, "group", "B", "A", n=300)
     assert gap == 0.0
     assert low < 0 < high
+
+
+def two_groups():
+    truth = [4.0] * 6 + [2.0] * 4 + [4.0] * 3 + [2.0] * 7
+    pred = [4.0] * 6 + [2.0] * 4 + [4.0] * 2 + [2.0] * 8
+    group = ["A"] * 10 + ["B"] * 10
+    return pd.DataFrame({"truth": truth, "pred": pred, "group": group})
+
+
+def test_impact_ratio_compares_each_group_with_the_best_placed():
+    table = impact_ratios(two_groups(), "group", cut=3.5, min_n=5).set_index("group")
+    assert table.loc["A", "rate_human"] == 0.6
+    assert table.loc["B", "rate_human"] == 0.3
+    assert table.loc["B", "ratio_human"] == pytest.approx(0.5)
+    assert table.loc["B", "ratio_machine"] == pytest.approx(0.2 / 0.6)
+    assert table.loc["A", "ratio_machine"] == 1.0
+    assert table["adverse_machine"].to_dict() == {"A": False, "B": True}
+
+
+def test_impact_ratio_leaves_out_small_groups():
+    frame = pd.concat([two_groups(), two_groups().head(3).assign(group="C")])
+    assert set(impact_ratios(frame, "group", cut=3.5, min_n=5)["group"]) == {"A", "B"}
+
+
+def test_ols_recovers_the_coefficients():
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=500)
+    y = 2 + 3 * x + rng.normal(0, 0.1, 500)
+    beta, se, p = ols(np.column_stack([np.ones(500), x]), y)
+    assert beta == pytest.approx([2, 3], abs=0.02)
+    assert (se > 0).all()
+    assert (p < 1e-10).all()
+
+
+def test_robust_errors_are_close_to_the_classical_ones_when_the_noise_is_even():
+    rng = np.random.default_rng(1)
+    x = np.column_stack([np.ones(2000), rng.normal(size=2000)])
+    y = x @ [1.0, 0.5] + rng.normal(0, 1.0, 2000)
+    _, se, _ = ols(x, y)
+    classical = np.sqrt(np.diag(np.linalg.inv(x.T @ x)))
+    assert se == pytest.approx(classical, rel=0.15)
+
+
+def test_each_group_is_compared_with_the_largest_one():
+    frame = frame_with_bias()
+    frame["other"] = np.where(np.arange(len(frame)) % 10 == 0, "Z", "Y")
+    table = group_regression(frame.assign(y=frame["pred"]), "y", "truth", ["group", "other"])
+    assert table["term"].tolist() == [
+        "intercept",
+        "truth",
+        "group: B vs A",
+        "other: Z vs Y",
+    ]
+
+
+def test_error_model_finds_the_group_scored_too_high_among_alike_essays():
+    table = error_model(frame_with_bias(), ["group"]).set_index("term")
+    row = table.loc["group: B vs A"]
+    assert row["coef"] == pytest.approx(0.4, abs=0.05)
+    assert row["low"] > 0.3
+    assert row["p"] < 1e-6
+
+
+def test_error_model_finds_nothing_when_the_groups_are_treated_alike():
+    table = error_model(frame_with_bias(shift_b=0.0), ["group"]).set_index("term")
+    assert abs(table.loc["group: B vs A", "coef"]) < 0.05
+
+
+def test_cleary_model_sees_a_shift_between_the_groups_at_the_same_machine_score():
+    rng = np.random.default_rng(3)
+    n = 1500
+    group = np.where(np.arange(n) % 3 == 0, "B", "A")
+    pred = rng.uniform(1.5, 4.5, n)
+    truth = pred + rng.normal(0, 0.3, n) - np.where(group == "B", 0.5, 0.0)
+    frame = pd.DataFrame({"truth": truth, "pred": pred, "group": group})
+    row = cleary_model(frame, ["group"]).set_index("term").loc["group: B vs A"]
+    assert row["coef"] == pytest.approx(-0.5, abs=0.05)
+    fair = frame.assign(truth=pred + rng.normal(0, 0.3, n))
+    assert cleary_model(fair, ["group"]).set_index("term").loc["group: B vs A", "p"] > 0.001

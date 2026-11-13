@@ -6,6 +6,7 @@ column per writer attribute (gender, race, ses).
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 from scoreaudit.metrics import bootstrap, qwk
 
@@ -72,3 +73,88 @@ def bias_gap(
     draws = [rng.choice(a, len(a)).mean() - rng.choice(b, len(b)).mean() for _ in range(n)]
     low, high = np.percentile(draws, [2.5, 97.5])
     return float(a.mean() - b.mean()), float(low), float(high)
+
+
+def impact_ratios(frame: pd.DataFrame, by: str, cut: float, min_n: int = MIN_N) -> pd.DataFrame:
+    """Share of each group scoring at least `cut`, and its ratio to the best-placed group.
+
+    The ratio is the one of the four-fifths rule and of New York City Local Law 144: a value below
+    0.8 is read as adverse impact. It is given for the raters and for the scorer, so one can see
+    whether the scorer makes a gap that the raters did not make, or only repeats it.
+    """
+    rows = []
+    for group, part in frame.groupby(by):
+        if len(part) < min_n:
+            continue
+        rows.append(
+            {
+                "attribute": by,
+                "group": group,
+                "n": len(part),
+                "rate_human": float((part["truth"] >= cut).mean()),
+                "rate_machine": float((part["pred"] >= cut).mean()),
+            }
+        )
+    table = pd.DataFrame(rows)
+    table["ratio_human"] = table["rate_human"] / table["rate_human"].max()
+    table["ratio_machine"] = table["rate_machine"] / table["rate_machine"].max()
+    table["adverse_machine"] = table["ratio_machine"] < 0.8
+    return table.sort_values("n", ascending=False).reset_index(drop=True)
+
+
+def ols(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Least squares with robust (HC3) standard errors: coefficients, errors, p values."""
+    x, y = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+    inverse = np.linalg.inv(x.T @ x)
+    beta = inverse @ x.T @ y
+    residual = y - x @ beta
+    leverage = np.einsum("ij,jk,ik->i", x, inverse, x)
+    scaled = x * (residual / (1 - leverage))[:, None]
+    cov = inverse @ (scaled.T @ scaled) @ inverse
+    se = np.sqrt(np.diag(cov))
+    p = 2 * stats.t.sf(np.abs(beta / se), len(y) - x.shape[1])
+    return beta, se, p
+
+
+def group_regression(
+    frame: pd.DataFrame, outcome: str, covariate: str, factors: list[str]
+) -> pd.DataFrame:
+    """Regress `outcome` on `covariate` and on writer groups, each against its largest group."""
+    columns = [np.ones(len(frame)), (frame[covariate] - frame[covariate].mean()).to_numpy()]
+    names = ["intercept", covariate]
+    for factor in factors:
+        reference = frame[factor].value_counts().idxmax()
+        for group in sorted(set(frame[factor].dropna()) - {reference}):
+            columns.append((frame[factor] == group).to_numpy(dtype=float))
+            names.append(f"{factor}: {group} vs {reference}")
+    beta, se, p = ols(np.column_stack(columns), frame[outcome].to_numpy())
+    return pd.DataFrame(
+        {
+            "term": names,
+            "coef": beta,
+            "se": se,
+            "low": beta - 1.96 * se,
+            "high": beta + 1.96 * se,
+            "p": p,
+        }
+    )
+
+
+def error_model(frame: pd.DataFrame, factors: list[str]) -> pd.DataFrame:
+    """Machine minus human score, regressed on the human score and the writer groups.
+
+    A coefficient for a group says how much more generous the scorer is to that group than to the
+    largest one, among essays that the raters scored alike.
+    """
+    data = frame.assign(error=frame["pred"].clip(1, 5) - frame["truth"])
+    return group_regression(data, "error", "truth", factors)
+
+
+def cleary_model(frame: pd.DataFrame, factors: list[str]) -> pd.DataFrame:
+    """Human score regressed on the machine score and the writer groups (Cleary, 1968).
+
+    A group coefficient away from zero means that the same machine score stands for a different
+    human score depending on the group.
+    """
+    data = frame.assign(pred=frame["pred"].clip(1, 5))
+    return group_regression(data, "truth", "pred", factors)
