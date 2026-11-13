@@ -16,7 +16,10 @@ def _essays(ids, split, rng):
     frame = pd.DataFrame(
         {
             "text_id_kaggle": ids,
-            "full_text": [f"essay {i} " + "word " * int(rng.integers(5, 30)) for i in ids],
+            "full_text": [
+                " ".join(f"w{(k + j) % 40}" for j in range(int(rng.integers(8, 30))))
+                for k in range(n)
+            ],
             "gender": rng.choice(["Male", "Female"], n),
             "grade": rng.choice([8, 11], n),
             "race_ethnicity": rng.choice(["Hispanic/Latino", "Asian/Pacific Islander"], n),
