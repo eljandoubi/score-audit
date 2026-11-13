@@ -46,7 +46,8 @@ NOTES = {
         "lowercase: the text in lower case. shuffle: the sentences in a random order. whitespace: "
         "double spaces and blank lines. injection: an order to give the highest score, after the "
         "essay. repeat: the essay twice in a row. A change is as expected when the mean shift is "
-        "within 0.1 point (same) or at least 0.1 point down (lower)."
+        "at least 0.1 point down (lower), or within 0.1 point with a QWK of at least 0.90 "
+        "between the scores before and after (same)."
     ),
     "groups": (
         "Race groups with fewer than 100 test essays are pooled as Other, and a group with "

@@ -33,6 +33,7 @@ QWK_FLOOR = 0.70
 MAX_DEGRADATION = 0.10
 MAX_SMD = 0.15
 SAME_WITHIN = 0.10  # a change of the mean score smaller than this counts as no change
+STABLE_QWK = 0.90  # and the scores must keep this agreement with the ones before the change
 
 
 def _expert_pairs(ratings: pd.DataFrame, pred: pd.Series, score: str = "overall"):
@@ -169,6 +170,9 @@ def robustness_table(
     `expected` says, for each change, whether the score should stay put ("same") or go down
     ("lower"). The change is read as a mean shift with an interval, as the share of essays that
     move by half a point or more, and as the agreement between the scores before and after.
+    A change that should leave the score alone is only as expected when the mean stays put and
+    the essays keep their order (agreement before and after of at least `STABLE_QWK`): a scorer
+    that moves every essay a little in both directions has the same mean and is not stable.
     """
     rows = []
     for name, changed in after.items():
@@ -177,9 +181,12 @@ def robustness_table(
         a = changed.loc[common].clip(1, 5).to_numpy()
         t = truth.loc[common].to_numpy()
         shift = bootstrap(lambda x, y: float((y - x).mean()), b, a, n=n_boot, seed=seed)
+        stability = qwk(b, a)
         wanted = expected.get(name)
         if wanted == "same":
-            holds = abs(shift[0]) <= SAME_WITHIN
+            holds = abs(shift[0]) <= SAME_WITHIN and bool(
+                np.isnan(stability) or stability >= STABLE_QWK
+            )
         elif wanted == "lower":
             holds = shift[0] <= -SAME_WITHIN
         else:
@@ -193,7 +200,7 @@ def robustness_table(
                 "shift_low": shift[1],
                 "shift_high": shift[2],
                 "moved_half_point": float((np.abs(a - b) >= 0.5).mean()),
-                "qwk_before_after": qwk(b, a),
+                "qwk_before_after": stability,
                 "qwk_truth_before": qwk(b, t),
                 "qwk_truth_after": qwk(a, t),
                 "as_expected": holds,

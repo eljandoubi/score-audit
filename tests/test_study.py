@@ -145,6 +145,22 @@ def test_a_scorer_that_does_not_go_down_when_it_should_fails_the_expectation():
     assert not table.loc[0, "as_expected"]
 
 
+def test_a_change_that_should_not_matter_must_also_keep_the_essays_in_order():
+    _, mean, _ = rated_essays()
+    rng = np.random.default_rng(0)
+    mixed = pd.Series(rng.permutation(mean.to_numpy()), index=mean.index)
+    table = robustness_table(mean, {"blanks": mixed}, mean, {"blanks": "same"}, n_boot=20)
+    assert abs(table.loc[0, "mean_shift"]) < 0.05
+    assert table.loc[0, "qwk_before_after"] < 0.9
+    assert not table.loc[0, "as_expected"]
+
+
+def test_scores_that_never_vary_are_stable_when_nothing_changes():
+    flat = pd.Series(3.0, index=pd.RangeIndex(50))
+    table = robustness_table(flat, {"blanks": flat}, flat, {"blanks": "same"}, n_boot=20)
+    assert table.loc[0, "as_expected"]
+
+
 def test_small_groups_are_pooled():
     groups = pd.Series(["A"] * 200 + ["B"] * 150 + ["C"] * 30 + ["D"] * 10)
     pooled = pool_small(groups, min_n=100)
