@@ -25,7 +25,7 @@ NOTES = {
         "a rater more than two raters do. The scorers that learn were trained on the mean of two "
         "ratings, which holds less noise than one rating: that explains part of such a gain and "
         "does not make them better than a person. The last three columns are the thresholds of "
-        "Williamson, Xi and Breyer (2012)."
+        "Williamson, Xi and Breyer (2012), the first one applied to the agreement with one rater."
     ),
     "subset": (
         "The first essays of a seeded shuffle of the test split: the zero-shot scorers are run on "
@@ -146,7 +146,7 @@ def agreement_block(table: pd.DataFrame) -> str:
         ("within 0.5", num("within_half")),
         ("bias", num("bias")),
         ("SMD", num("smd")),
-        ("QWK >= 0.70", yes("meets_qwk")),
+        ("QWK one rater >= 0.70", yes("meets_qwk")),
         ("loss <= 0.10", yes("meets_loss")),
         ("|SMD| <= 0.15", yes("meets_smd")),
     ]

@@ -62,7 +62,9 @@ def agreement_table(
 
     `qwk_humans` is the agreement of the two raters on the same essays: it is what the scorer
     is measured against, and `loss` is what is lost by swapping one rater for the scorer. The last
-    three columns say whether the scorer meets the three criteria of Williamson, Xi and Breyer.
+    three columns say whether the scorer meets the three criteria of Williamson, Xi and Breyer;
+    the kappa criterion is applied to the agreement with one rater, the figure that two raters
+    can be compared on, and not to the mean of the two, which holds less noise.
     """
     rows = []
     for name, pred in predictions.items():
@@ -94,7 +96,7 @@ def agreement_table(
                 "mae": mae(p, mean),
                 "bias": float((p - mean).mean()),
                 "smd": smd,
-                "meets_qwk": vs_mean[0] >= QWK_FLOOR,
+                "meets_qwk": vs_single[0] >= QWK_FLOOR,
                 "meets_loss": loss[0] <= MAX_DEGRADATION,
                 "meets_smd": abs(smd) <= MAX_SMD,
             }

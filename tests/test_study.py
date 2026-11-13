@@ -55,6 +55,15 @@ def test_a_constant_scorer_has_no_agreement_and_fails_the_criteria():
     assert not row["meets_loss"]
 
 
+def test_the_kappa_threshold_is_applied_to_one_rater_and_not_to_the_mean_of_two():
+    ratings, mean, quality = rated_essays()
+    noise = np.random.default_rng(1).normal(0, 0.6, len(quality))
+    noisy = pd.Series(quality + noise, index=mean.index)
+    row = agreement_table({"noisy": noisy}, ratings, n_boot=20).iloc[0]
+    assert row["qwk_mean"] >= 0.70 > row["qwk_single"]
+    assert not row["meets_qwk"]
+
+
 def test_a_scorer_that_is_too_generous_fails_the_smd_criterion():
     ratings, mean, _ = rated_essays()
     row = agreement_table({"generous": mean + 1.0}, ratings, n_boot=50).iloc[0]
