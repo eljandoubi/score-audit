@@ -12,6 +12,94 @@ import pandas as pd  # noqa: E402
 
 Column = tuple[str, Callable[[pd.Series], str]]
 
+NOTES = {
+    "people": (
+        "Each essay has two ratings by different raters. Their agreement is the level a scorer is "
+        "asked to reach. The ICC of the mean of the two says how stable the mean score is."
+    ),
+    "agreement": (
+        "QWK is the quadratic weighted kappa on half-point levels. 'vs rater mean' compares the "
+        "rounded score with the mean of the two raters. 'vs one rater' compares it with each rater "
+        "in turn, which is the figure to set against the two raters agreeing with each other; the "
+        "loss is the second minus the first, so a negative loss means that the scorer agrees with "
+        "a rater more than two raters do. The scorers that learn were trained on the mean of two "
+        "ratings, which holds less noise than one rating: that explains part of such a gain and "
+        "does not make them better than a person. The last three columns are the thresholds of "
+        "Williamson, Xi and Breyer (2012)."
+    ),
+    "subset": (
+        "The first essays of a seeded shuffle of the test split: the zero-shot scorers are run on "
+        "a few hundred essays only, and the other scorers are shown on the same essays. A "
+        "zero-shot score is the expected value of the probabilities the model gives to the "
+        "answers 1 to 5 (E to A for the letters prompt). 'linear map' recalibrates that score to "
+        "the rater scale with a line fitted on other essays than the one scored."
+    ),
+    "prompts": (
+        "The same model with four wordings of the task. A scorer that did not depend on the "
+        "wording would give the same mean and order the essays alike. 'ICC of one sampled run' is "
+        "the share of the variance of one sampled answer that comes from the essays and not from "
+        "the sampling, computed from the probabilities."
+    ),
+    "robustness": (
+        "The same changes are applied to the first essays of the test split and the score is read "
+        "again. typos: one typing slip in 2 or 5 percent of the words of four letters or more. "
+        "lowercase: the text in lower case. shuffle: the sentences in a random order. whitespace: "
+        "double spaces and blank lines. injection: an order to give the highest score, after the "
+        "essay. repeat: the essay twice in a row. A change is as expected when the mean shift is "
+        "within 0.1 point (same) or at least 0.1 point down (lower)."
+    ),
+    "groups": (
+        "Race groups with fewer than 100 test essays are pooled as Other, and a group with "
+        "fewer than 30 is left out of the tables. bias is the scorer's mean minus the raters' "
+        "mean in the group: positive means that the scorer is more generous to the group than "
+        "the raters. SMD is that gap over the spread of the two scores (Williamson, Xi and "
+        "Breyer ask for an absolute value below 0.15)."
+    ),
+    "impact": (
+        "Share of each group scoring at or above a cut, divided by the share of the best-placed "
+        "group. A ratio below 0.8 breaks the four-fifths rule. 'ratio raters' is the same ratio "
+        "computed on the raters' scores, which says whether the scorer made the gap or found it."
+    ),
+    "error": (
+        "The scorer's score minus the raters' score, regressed on the raters' score and on the "
+        "writer groups, with robust standard errors. A group coefficient is the difference in the "
+        "average error at the same rater score, against the largest group. Only the group terms "
+        "are shown."
+    ),
+    "cleary": (
+        "The raters' score regressed on the scorer's score and on the writer groups (Cleary, "
+        "1968). A group term away from zero would mean that the same scorer score predicts a "
+        "different rater score depending on the group."
+    ),
+    "dif": (
+        "Differential item functioning by standardization (Dorans and Kulick): essays are matched "
+        "on the mean of the other five traits and cut into eight bands, and the gap in the trait "
+        "between the two groups is averaged over the bands. This audits the human ratings that "
+        "the scorers learn from, not a scorer."
+    ),
+    "bands": (
+        "Bands of equal size of the proficiency estimated by the graded response model. A scorer "
+        "that pulls every essay toward the middle is too generous at the low end and too harsh at "
+        "the high end, which the overall bias hides."
+    ),
+    "mitigation": (
+        "as fitted: the scorer as it is. reweighed training: training weights that make the group "
+        "and the score level independent (Kamiran and Calders, 2012). common line: one line from "
+        "the scorer's score to the rater scale, fitted on other folds. line for each group: one "
+        "line per group, which needs the writer's group at scoring time. The gap in bias is the "
+        "largest minus the smallest bias between groups."
+    ),
+    "routing": (
+        "The essays on which an ensemble of ridge models, each fitted on a bootstrap sample, "
+        "disagree most are sent to a person, here the first rater, and the second rater is the "
+        "reference. 'At random' sends the same number of essays chosen by chance. A scorer trained "
+        "on the mean of two raters agrees more with the second rater than the first rater does, "
+        "so sending essays to the first rater lowers the QWK here: what the table can show is "
+        "whether the doubt signal picks out the essays the scorer gets wrong, which is the gap "
+        "between the two columns."
+    ),
+}
+
 
 def ci(est: str, low: str, high: str, digits: int = 2) -> Callable[[pd.Series], str]:
     return lambda r: f"{r[est]:.{digits}f} [{r[low]:.{digits}f}, {r[high]:.{digits}f}]"
@@ -83,11 +171,11 @@ def summary(folder: Path) -> str:
             ("ICC one rater", num("icc_single", 3)),
             ("ICC mean of two", num("icc_mean_of_two", 3)),
         ]
-        section("Human raters", markdown(people, columns))
+        section("Human raters", markdown(people, columns), NOTES["people"])
 
     for name, title, note in (
-        ("agreement_test", "Agreement on the test split", ""),
-        ("agreement_subset", "Agreement on the zero-shot subset", ""),
+        ("agreement_test", "Agreement on the test split", NOTES["agreement"]),
+        ("agreement_subset", "Agreement on the zero-shot subset", NOTES["subset"]),
     ):
         table = read(folder, f"{name}.csv")
         if table is not None:
@@ -105,7 +193,9 @@ def summary(folder: Path) -> str:
             ("ICC of one sampled run", num("icc_one_run")),
         ]
         section(
-            f"Prompt sensitivity ({path.stem.removeprefix('prompts_')})", markdown(table, columns)
+            f"Prompt sensitivity ({path.stem.removeprefix('prompts_')})",
+            markdown(table, columns),
+            NOTES["prompts"],
         )
 
     for scope, title in (("learned", "learned scorers"), ("zero_shot", "zero-shot scorers")):
@@ -120,7 +210,7 @@ def summary(folder: Path) -> str:
                 ("QWK before/after", num("qwk_before_after")),
                 ("as expected", yes("as_expected")),
             ]
-            section(f"Robustness of the {title}", markdown(table, columns))
+            section(f"Robustness of the {title}", markdown(table, columns), NOTES["robustness"])
 
     groups = read(folder, "fairness_groups_*.csv")
     if groups is not None:
@@ -135,7 +225,7 @@ def summary(folder: Path) -> str:
             ("SMD", num("smd")),
             ("QWK", ci("qwk", "qwk_low", "qwk_high")),
         ]
-        section("Agreement and bias by group", markdown(groups, columns))
+        section("Agreement and bias by group", markdown(groups, columns), NOTES["groups"])
     impact = read(folder, "fairness_impact_*.csv")
     if impact is not None:
         columns = [
@@ -149,11 +239,12 @@ def summary(folder: Path) -> str:
             ("ratio scorer", num("ratio_machine")),
             ("below 0.8", yes("adverse_machine")),
         ]
-        section("Impact ratios", markdown(impact, columns))
+        section("Impact ratios", markdown(impact, columns), NOTES["impact"])
     for part, title in (
         ("error_model", "Error of the scorer regressed on the rater score and writer groups"),
         ("cleary_model", "Rater score regressed on the scorer's score and writer groups"),
     ):
+        note = NOTES["error" if part == "error_model" else "cleary"]
         table = read(folder, f"fairness_{part}_*.csv")
         if table is not None:
             columns = [
@@ -162,7 +253,7 @@ def summary(folder: Path) -> str:
                 ("coefficient", ci("coef", "low", "high", 3)),
                 ("p", num("p", 4)),
             ]
-            section(title, markdown(table[table["term"].str.contains(" vs ")], columns))
+            section(title, markdown(table[table["term"].str.contains(" vs ")], columns), note)
 
     dif = read(folder, "dif_traits.csv")
     if dif is not None:
@@ -173,7 +264,11 @@ def summary(folder: Path) -> str:
             ("DIF in points", ci("dif", "dif_low", "dif_high", 3)),
             ("DIF in SD", num("smd", 3)),
         ]
-        section("Differential functioning of the human trait ratings", markdown(dif, columns))
+        section(
+            "Differential functioning of the human trait ratings",
+            markdown(dif, columns),
+            NOTES["dif"],
+        )
 
     items = read(folder, "irt_items.csv")
     if items is not None:
@@ -201,7 +296,7 @@ def summary(folder: Path) -> str:
             ("bias", ci("bias", "bias_low", "bias_high")),
             ("MAE", num("mae")),
         ]
-        section("Bias across the range of proficiency", markdown(bands, columns))
+        section("Bias across the range of proficiency", markdown(bands, columns), NOTES["bands"])
 
     mitigation = read(folder, "mitigation_*.csv")
     if mitigation is not None:
@@ -213,7 +308,7 @@ def summary(folder: Path) -> str:
             ("largest |SMD|", num("max_abs_smd")),
             ("lowest group QWK", num("worst_group_qwk")),
         ]
-        section("What narrowing the gaps costs", markdown(mitigation, columns))
+        section("What narrowing the gaps costs", markdown(mitigation, columns), NOTES["mitigation"])
 
     routing = read(folder, "routing_*.csv")
     if routing is not None:
@@ -224,7 +319,9 @@ def summary(folder: Path) -> str:
             ("QWK, most doubtful first", num("qwk_routed", 3)),
             ("QWK, at random", num("qwk_random", 3)),
         ]
-        section("Sending the doubtful essays to a person", markdown(routing, columns))
+        section(
+            "Sending the doubtful essays to a person", markdown(routing, columns), NOTES["routing"]
+        )
     return "\n".join(parts)
 
 

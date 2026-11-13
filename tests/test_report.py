@@ -24,6 +24,28 @@ def test_the_summary_has_a_section_for_each_table(audit):
         assert f"## {title}" in text, title
 
 
+def test_each_table_comes_with_a_note_on_how_to_read_it(audit):
+    out, _ = audit
+    text = report.summary(out)
+    for title, key in (
+        ("Human raters", "people"),
+        ("Agreement on the test split", "agreement"),
+        ("Agreement on the zero-shot subset", "subset"),
+        ("Prompt sensitivity (fake)", "prompts"),
+        ("Robustness of the learned scorers", "robustness"),
+        ("Robustness of the zero-shot scorers", "robustness"),
+        ("Agreement and bias by group", "groups"),
+        ("Impact ratios", "impact"),
+        ("Error of the scorer regressed on the rater score and writer groups", "error"),
+        ("Rater score regressed on the scorer's score and writer groups", "cleary"),
+        ("Differential functioning of the human trait ratings", "dif"),
+        ("Bias across the range of proficiency", "bands"),
+        ("What narrowing the gaps costs", "mitigation"),
+        ("Sending the doubtful essays to a person", "routing"),
+    ):
+        assert f"## {title}\n\n{report.NOTES[key]}\n\n|" in text, title
+
+
 def test_the_agreement_table_lists_the_scorers_with_their_intervals(audit):
     out, _ = audit
     text = report.summary(out)
